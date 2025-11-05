@@ -1,0 +1,1388 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Profile - Healthcare AI</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --accent: #22c55e;
+            --surface: rgba(255, 255, 255, 0.92);
+            --border: rgba(148, 163, 184, 0.35);
+            --text: #0f172a;
+            --muted: #64748b;
+            --muted-light: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.18), transparent 45%),
+                        radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.18), transparent 40%),
+                        #f4f6fb;
+            min-height: 100vh;
+            padding: 32px;
+            color: var(--text);
+        }
+
+        .app-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .sidebar {
+            background: linear-gradient(160deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+            color: #e2e8f0;
+            border-radius: 28px;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            box-shadow: 0 25px 60px rgba(15, 23, 42, 0.35);
+            position: sticky;
+            top: 32px;
+            height: fit-content;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+        }
+
+        .sidebar__brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sidebar__brand .brand-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
+            background: rgba(148, 197, 255, 0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .sidebar__brand .brand-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .sidebar__brand .brand-tagline {
+            font-size: 0.9rem;
+            color: rgba(226, 232, 240, 0.75);
+            margin-top: 4px;
+        }
+
+        .sidebar-card {
+            background: rgba(15, 23, 42, 0.45);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 20px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .sidebar-card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .sidebar-card p {
+            font-size: 0.95rem;
+            color: rgba(226, 232, 240, 0.75);
+            line-height: 1.45;
+        }
+
+        .progress-track {
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 999px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-value {
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #6366f1);
+            border-radius: 999px;
+            width: 68%;
+        }
+
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: rgba(226, 232, 240, 0.6);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .sidebar-list {
+            list-style: none;
+            display: grid;
+            gap: 12px;
+        }
+
+        .sidebar-list li {
+            font-size: 0.93rem;
+            color: rgba(226, 232, 240, 0.85);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.5;
+        }
+
+        .sidebar-list span {
+            font-size: 1.1rem;
+        }
+
+        .sidebar-actions {
+            margin-top: auto;
+            display: grid;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(241, 245, 249, 0.06);
+            color: #e2e8f0;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-btn--primary {
+            background: linear-gradient(140deg, rgba(59, 130, 246, 0.25), rgba(99, 102, 241, 0.45));
+            border-color: rgba(148, 197, 255, 0.4);
+        }
+
+        .nav-btn--ghost {
+            background: transparent;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.35);
+        }
+
+        .main-content {
+            background: var(--surface);
+            border-radius: 28px;
+            padding: 40px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            backdrop-filter: blur(18px);
+        }
+
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .page-title .eyebrow {
+            text-transform: uppercase;
+            font-size: 0.78rem;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .page-title h1 {
+            font-size: 2rem;
+            margin-top: 6px;
+        }
+
+        .page-title p {
+            margin-top: 10px;
+            color: var(--muted);
+            max-width: 460px;
+            line-height: 1.6;
+        }
+
+        .header-highlights {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .highlight-card {
+            background: linear-gradient(145deg, rgba(79, 70, 229, 0.12), rgba(59, 130, 246, 0.08));
+            border-radius: 18px;
+            padding: 16px 18px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            min-width: 200px;
+        }
+
+        .highlight-icon {
+            font-size: 1.4rem;
+        }
+
+        .highlight-title {
+            font-weight: 600;
+            font-size: 0.98rem;
+            color: var(--text);
+        }
+
+        .highlight-meta {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .form-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .profile-section {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 18px 35px -30px rgba(15, 23, 42, 0.45);
+        }
+
+        .profile-section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .section-icon {
+            font-size: 1.6rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-row {
+            display: grid;
+            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text);
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            background: #f8fafc;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+            background: #ffffff;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .common-conditions {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px dashed rgba(148, 163, 184, 0.6);
+        }
+
+        .condition-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .condition-checkbox {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            background: #ffffff;
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 500;
+            transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+        }
+
+        .condition-checkbox:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .condition-checkbox input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--primary);
+            margin: 0;
+        }
+
+        .condition-checkbox span {
+            flex: 1;
+        }
+
+        .show-more-btn {
+            border: 1px dashed rgba(148, 163, 184, 0.7);
+            border-radius: 12px;
+            padding: 10px 16px;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--muted);
+            transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+        }
+
+        .show-more-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        .custom-conditions-section {
+            border-top: 1px solid rgba(148, 163, 184, 0.35);
+            padding-top: 16px;
+        }
+
+        .custom-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--muted);
+        }
+
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            border-radius: 12px;
+            background: #ffffff;
+            min-height: 48px;
+            cursor: text;
+        }
+
+        .tag-input input {
+            border: none;
+            outline: none;
+            min-width: 160px;
+            padding: 8px 4px;
+            font-size: 0.95rem;
+            background: transparent;
+        }
+
+        .tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(14, 165, 233, 0.85));
+            color: #ffffff;
+            border-radius: 999px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 12px 25px -20px rgba(59, 130, 246, 0.9);
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.25);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .emergency-contact {
+            background: linear-gradient(135deg, rgba(254, 226, 226, 0.6), rgba(254, 202, 202, 0.4));
+            border-radius: 16px;
+            padding: 18px;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+            display: grid;
+            gap: 16px;
+        }
+
+        .action-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 24px;
+            border-radius: 14px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #ffffff;
+            box-shadow: 0 18px 35px -18px rgba(59, 130, 246, 0.7);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 45px -18px rgba(59, 130, 246, 0.85);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--primary);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 35px -24px rgba(15, 23, 42, 0.35);
+        }
+
+        .info-box {
+            background: linear-gradient(125deg, rgba(59, 130, 246, 0.12), rgba(14, 165, 233, 0.14));
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            border-radius: 20px;
+            padding: 18px 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            color: var(--text);
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .info-icon {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-top: 3px;
+        }
+
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 24px;
+        }
+
+        .loading-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 26px 32px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 1100px) {
+            body {
+                padding: 24px;
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                order: 2;
+                position: static;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .main-content {
+                padding: 28px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-highlights {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                padding: 24px;
+            }
+
+            .main-content {
+                padding: 22px;
+                border-radius: 22px;
+            }
+
+            .highlight-card {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar__brand">
+                <div class="brand-icon">AI</div>
+                <div>
+                    <div class="brand-name">Healthcare AI</div>
+                    <div class="brand-tagline">Your virtual care companion</div>
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <h2>Profile Status</h2>
+                <p>Completing your health profile unlocks more precise live coaching and alerts.</p>
+                <div class="progress-track">
+                    <div class="progress-value"></div>
+                </div>
+                <div class="progress-meta">
+                    <span>68% complete</span>
+                    <span>~5 minutes</span>
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <h2>What to include</h2>
+                <ul class="sidebar-list">
+                    <li><span>🩺</span>Share medications and chronic conditions for safer recommendations.</li>
+                    <li><span>🧬</span>Mention family history to spot hereditary risk factors.</li>
+                    <li><span>🚨</span>Keep your emergency contact current so care teams can react fast.</li>
+                </ul>
+            </div>
+
+            <div class="sidebar-actions">
+                <a href="/live2d/" class="nav-btn nav-btn--primary">🤖 Back to Chat</a>
+                <button class="nav-btn nav-btn--ghost" onclick="logout()">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="page-title">
+                    <span class="eyebrow">Personal Health Data</span>
+                    <h1>Health Profile</h1>
+                    <p>Complete the sections below so our AI assistant can tailor guidance, track progress, and share accurate updates with your care providers.</p>
+                </div>
+                <div class="header-highlights">
+                    <div class="highlight-card">
+                        <span class="highlight-icon">🔒</span>
+                        <div>
+                            <p class="highlight-title">Secure by design</p>
+                            <p class="highlight-meta">Encrypted at rest and in transit</p>
+                        </div>
+                    </div>
+                    <div class="highlight-card">
+                        <span class="highlight-icon">🧠</span>
+                        <div>
+                            <p class="highlight-title">AI-assisted insights</p>
+                            <p class="highlight-meta">Personalized daily check-ins</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="form-wrapper">
+                <div class="form-grid">
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <span class="section-icon">👤</span>
+                            <div>
+                                <h2>Basic Information</h2>
+                                <p class="section-subtitle">Tell us who we are supporting today.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="full_name">Full Name <span class="required">*</span></label>
+                            <input type="text" id="full_name" name="full_name" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="age">Age</label>
+                                <input type="number" id="age" name="age" min="1" max="120">
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="female">Female</option>
+                                    <option value="male">Male</option>
+                                    <option value="non_binary">Non-binary</option>
+                                    <option value="prefer_not_to_say">Prefer not to say</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <span class="section-icon">🩺</span>
+                            <div>
+                                <h2>Vitals & Medical History</h2>
+                                <p class="section-subtitle">These details help the AI personalize check-ins.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="height">Height (cm)</label>
+                                <input type="number" id="height" name="height" min="50" max="250" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="weight">Weight (kg)</label>
+                                <input type="number" id="weight" name="weight" min="10" max="200" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label for="blood_type">Blood Type</label>
+                                <select id="blood_type" name="blood_type">
+                                    <option value="">Select Blood Type</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Chronic Conditions</label>
+                            <div class="common-conditions">
+                                <div class="condition-row">
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="hypertension" name="chronic_conditions" value="hypertension">
+                                        <span>Hypertension</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="diabetes" name="chronic_conditions" value="diabetes">
+                                        <span>Diabetes</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="asthma" name="chronic_conditions" value="asthma">
+                                        <span>Asthma</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="heart_disease" name="chronic_conditions" value="heart_disease">
+                                        <span>Heart Disease</span>
+                                    </label>
+                                </div>
+                                <div class="condition-row">
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="cancer" name="chronic_conditions" value="cancer">
+                                        <span>Cancer</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="depression" name="chronic_conditions" value="depression">
+                                        <span>Depression</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="anxiety" name="chronic_conditions" value="anxiety">
+                                        <span>Anxiety</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="arthritis" name="chronic_conditions" value="arthritis">
+                                        <span>Arthritis</span>
+                                    </label>
+                                    <label class="condition-checkbox">
+                                        <input type="checkbox" id="thyroid" name="chronic_conditions" value="thyroid">
+                                        <span>Thyroid</span>
+                                    </label>
+                                </div>
+                                <div class="more-conditions" id="more-conditions" style="display: none;">
+                                    <div class="condition-row">
+                                        <label class="condition-checkbox">
+                                            <input type="checkbox" id="copd" name="chronic_conditions" value="copd">
+                                            <span>COPD</span>
+                                        </label>
+                                        <label class="condition-checkbox">
+                                            <input type="checkbox" id="kidney_disease" name="chronic_conditions" value="kidney_disease">
+                                            <span>Kidney Disease</span>
+                                        </label>
+                                        <label class="condition-checkbox">
+                                            <input type="checkbox" id="osteoporosis" name="chronic_conditions" value="osteoporosis">
+                                            <span>Osteoporosis</span>
+                                        </label>
+                                        <label class="condition-checkbox">
+                                            <input type="checkbox" id="migraine" name="chronic_conditions" value="migraine">
+                                            <span>Migraine</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="button" class="show-more-btn" onclick="toggleMoreConditions()">
+                                    <span id="more-btn-text">+ Show More</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="custom-conditions-section">
+                            <label for="custom-condition-input" class="custom-label">Other Conditions</label>
+                            <div class="tag-input" id="custom-conditions-container">
+                                <input type="text" id="custom-condition-input" placeholder="Type condition and press Enter">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section full-width">
+                        <div class="section-header">
+                            <span class="section-icon">💊</span>
+                            <div>
+                                <h2>Current Medications</h2>
+                                <p class="section-subtitle">Add prescriptions, over-the-counter meds, or supplements.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medication-input">Add Medication (type and press Enter)</label>
+                            <div class="tag-input" id="medications-container">
+                                <input type="text" id="medication-input" placeholder="e.g., Metformin 500mg twice daily">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="allergy-input">Drug Allergies</label>
+                            <div class="tag-input" id="allergies-container">
+                                <input type="text" id="allergy-input" placeholder="e.g., Penicillin, Aspirin">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <span class="section-icon">🏃</span>
+                            <div>
+                                <h2>Lifestyle</h2>
+                                <p class="section-subtitle">Capture routine habits that impact your health.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="smoking_status">Smoking Status</label>
+                            <select id="smoking_status" name="smoking_status">
+                                <option value="">Select Status</option>
+                                <option value="never">Never smoked</option>
+                                <option value="former">Former smoker</option>
+                                <option value="current">Current smoker</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="alcohol_consumption">Alcohol Consumption</label>
+                            <select id="alcohol_consumption" name="alcohol_consumption">
+                                <option value="">Select Frequency</option>
+                                <option value="never">Never</option>
+                                <option value="occasional">Occasional (1-2 times/month)</option>
+                                <option value="moderate">Moderate (1-2 times/week)</option>
+                                <option value="frequent">Frequent (3+ times/week)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exercise_frequency">Exercise Frequency</label>
+                            <select id="exercise_frequency" name="exercise_frequency">
+                                <option value="">Select Frequency</option>
+                                <option value="none">None</option>
+                                <option value="rare">Rarely (less than once/week)</option>
+                                <option value="weekly">1-2 times per week</option>
+                                <option value="regular">3-4 times per week</option>
+                                <option value="daily">Daily</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <div class="section-header">
+                            <span class="section-icon">🚨</span>
+                            <div>
+                                <h2>Emergency Contact</h2>
+                                <p class="section-subtitle">We only use this if urgent follow-up is required.</p>
+                            </div>
+                        </div>
+
+                        <div class="emergency-contact">
+                            <div class="form-group">
+                                <label for="emergency_name">Contact Name</label>
+                                <input type="text" id="emergency_name" name="emergency_name">
+                            </div>
+                            <div class="form-group">
+                                <label for="emergency_phone">Phone Number</label>
+                                <input type="tel" id="emergency_phone" name="emergency_phone">
+                            </div>
+                            <div class="form-group">
+                                <label for="emergency_relationship">Relationship</label>
+                                <input type="text" id="emergency_relationship" name="emergency_relationship" placeholder="e.g., Spouse, Parent, Sibling">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section full-width">
+                        <div class="section-header">
+                            <span class="section-icon">📝</span>
+                            <div>
+                                <h2>Additional Health Information</h2>
+                                <p class="section-subtitle">Provide context so the AI can flag important trends.</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="family_history">Family Medical History</label>
+                            <textarea id="family_history" name="family_history" placeholder="Describe any relevant family medical history (e.g., diabetes in father, heart disease in mother)"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="health_goals">Health Goals &amp; Concerns</label>
+                            <textarea id="health_goals" name="health_goals" placeholder="Describe your current health goals, concerns, or symptoms you'd like to discuss"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="additional_notes">Additional Notes</label>
+                            <textarea id="additional_notes" name="additional_notes" placeholder="Any other health information you'd like the AI to know about"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-panel">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="saveProfile()">💾 Save Health Profile</button>
+                        <a class="btn btn-secondary" href="/live2d/">🔙 Back to Chat</a>
+                    </div>
+
+                    <div class="info-box">
+                        <span class="info-icon">💡</span>
+                        <div>
+                            <strong>Your privacy is protected.</strong>
+                            We encrypt every field you share and only use it to personalize your AI-powered health guidance and alerts.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <p>Saving your health profile...</p>
+        </div>
+    </div>
+
+<script>
+        // Health profile data
+        let healthProfile = {};
+        let medications = [];
+        let allergies = [];
+        let customConditions = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkUserRole();
+        });
+
+        // Check if user is admin and redirect to admin dashboard
+        async function checkUserRole() {
+            const token = localStorage.getItem('access_token');
+            const userData = localStorage.getItem('user_data');
+            
+            if (!token || !userData) {
+                window.location.href = '/live2d/auth';
+                return;
+            }
+
+            try {
+                const user = JSON.parse(userData);
+                
+                // Only redirect admin and super_admin (NOT doctor, nurse, social_worker)
+                if (user.role === 'admin' || user.role === 'super_admin') {
+                    window.location.href = '/admin/';
+                    return;
+                }
+                
+                // Allow access for: doctor, nurse, social_worker, user (patients), and other roles
+                loadUserProfile();
+                initializeTagInputs();
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                window.location.href = '/live2d/auth';
+            }
+        }
+
+        // Load existing user profile
+        async function loadUserProfile() {
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    window.location.href = '/live2d/auth';
+                    return;
+                }
+
+                const response = await fetch('/api/v1/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    
+                    // Fill basic information
+                    document.getElementById('full_name').value = userData.full_name || '';
+                    
+                    // Load health profile if it exists
+                    if (userData.health_profile) {
+                        populateHealthProfile(userData.health_profile);
+                    }
+                } else if (response.status === 401) {
+                    localStorage.clear();
+                    window.location.href = '/live2d/auth';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showMessage('Error loading profile data', 'error');
+            }
+        }
+
+        // Populate health profile form
+        function populateHealthProfile(profile) {
+            // Basic info
+            if (profile.age) document.getElementById('age').value = profile.age;
+            if (profile.gender) document.getElementById('gender').value = profile.gender;
+            if (profile.height) document.getElementById('height').value = profile.height;
+            if (profile.weight) document.getElementById('weight').value = profile.weight;
+            if (profile.blood_type) document.getElementById('blood_type').value = profile.blood_type;
+
+            // Chronic conditions
+            if (profile.chronic_conditions) {
+                profile.chronic_conditions.forEach(condition => {
+                    const checkbox = document.getElementById(condition);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            // Medications and allergies
+            if (profile.medications) {
+                medications = profile.medications;
+                updateMedicationTags();
+            }
+            if (profile.allergies) {
+                allergies = profile.allergies;
+                updateAllergyTags();
+            }
+            
+            // Custom chronic conditions
+            if (profile.custom_chronic_conditions) {
+                customConditions = profile.custom_chronic_conditions;
+                updateCustomConditionTags();
+            }
+
+            // Lifestyle
+            if (profile.smoking_status) document.getElementById('smoking_status').value = profile.smoking_status;
+            if (profile.alcohol_consumption) document.getElementById('alcohol_consumption').value = profile.alcohol_consumption;
+            if (profile.exercise_frequency) document.getElementById('exercise_frequency').value = profile.exercise_frequency;
+
+            // Emergency contact
+            if (profile.emergency_contact) {
+                document.getElementById('emergency_name').value = profile.emergency_contact.name || '';
+                document.getElementById('emergency_phone').value = profile.emergency_contact.phone || '';
+                document.getElementById('emergency_relationship').value = profile.emergency_contact.relationship || '';
+            }
+
+            // Additional info
+            if (profile.family_history) document.getElementById('family_history').value = profile.family_history;
+            if (profile.health_goals) document.getElementById('health_goals').value = profile.health_goals;
+            if (profile.additional_notes) document.getElementById('additional_notes').value = profile.additional_notes;
+        }
+
+        // Initialize tag inputs for medications and allergies
+        function initializeTagInputs() {
+            // Medications
+            const medicationInput = document.getElementById('medication-input');
+            medicationInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                    e.preventDefault();
+                    addMedication(e.target.value.trim());
+                    e.target.value = '';
+                }
+            });
+
+            // Allergies
+            const allergyInput = document.getElementById('allergy-input');
+            allergyInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                    e.preventDefault();
+                    addAllergy(e.target.value.trim());
+                    e.target.value = '';
+                }
+            });
+            
+            // Custom chronic conditions
+            const customConditionInput = document.getElementById('custom-condition-input');
+            customConditionInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                    e.preventDefault();
+                    addCustomCondition(e.target.value.trim());
+                    e.target.value = '';
+                }
+            });
+        }
+
+        // Medication management
+        function addMedication(medication) {
+            if (!medications.includes(medication)) {
+                medications.push(medication);
+                updateMedicationTags();
+            }
+        }
+
+        function removeMedication(medication) {
+            medications = medications.filter(med => med !== medication);
+            updateMedicationTags();
+        }
+
+        function updateMedicationTags() {
+            const container = document.getElementById('medications-container');
+            const input = document.getElementById('medication-input');
+            
+            // Clear existing tags
+            const existingTags = container.querySelectorAll('.tag');
+            existingTags.forEach(tag => tag.remove());
+            
+            // Add tags
+            medications.forEach(medication => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    <span>${medication}</span>
+                    <span class="tag-remove" onclick="removeMedication('${medication}')">×</span>
+                `;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        // Allergy management
+        function addAllergy(allergy) {
+            if (!allergies.includes(allergy)) {
+                allergies.push(allergy);
+                updateAllergyTags();
+            }
+        }
+
+        function removeAllergy(allergy) {
+            allergies = allergies.filter(al => al !== allergy);
+            updateAllergyTags();
+        }
+
+        function updateAllergyTags() {
+            const container = document.getElementById('allergies-container');
+            const input = document.getElementById('allergy-input');
+            
+            // Clear existing tags
+            const existingTags = container.querySelectorAll('.tag');
+            existingTags.forEach(tag => tag.remove());
+            
+            // Add tags
+            allergies.forEach(allergy => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    <span>${allergy}</span>
+                    <span class="tag-remove" onclick="removeAllergy('${allergy}')">×</span>
+                `;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        // Custom chronic condition management
+        function addCustomCondition(condition) {
+            if (!customConditions.includes(condition)) {
+                customConditions.push(condition);
+                updateCustomConditionTags();
+            }
+        }
+
+        function removeCustomCondition(condition) {
+            customConditions = customConditions.filter(c => c !== condition);
+            updateCustomConditionTags();
+        }
+
+        function updateCustomConditionTags() {
+            const container = document.getElementById('custom-conditions-container');
+            const input = document.getElementById('custom-condition-input');
+            
+            // Clear existing tags
+            const existingTags = container.querySelectorAll('.tag');
+            existingTags.forEach(tag => tag.remove());
+            
+            // Add tags
+            customConditions.forEach(condition => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    <span>${condition}</span>
+                    <span class="tag-remove" onclick="removeCustomCondition('${condition}')">×</span>
+                `;
+                container.insertBefore(tag, input);
+            });
+        }
+
+        // Save health profile
+        async function saveProfile() {
+            try {
+                document.getElementById('loading').style.display = 'flex';
+                
+                // Collect form data
+                const profileData = {
+                    full_name: document.getElementById('full_name').value,
+                    health_profile: {
+                        age: parseInt(document.getElementById('age').value) || null,
+                        gender: document.getElementById('gender').value || null,
+                        height: parseFloat(document.getElementById('height').value) || null,
+                        weight: parseFloat(document.getElementById('weight').value) || null,
+                        blood_type: document.getElementById('blood_type').value || null,
+                        
+                        // Chronic conditions (combine predefined and custom)
+                        chronic_conditions: Array.from(document.querySelectorAll('input[name="chronic_conditions"]:checked'))
+                            .map(cb => cb.value),
+                        custom_chronic_conditions: customConditions,
+                        
+                        // Medications and allergies
+                        medications: medications,
+                        allergies: allergies,
+                        
+                        // Lifestyle
+                        smoking_status: document.getElementById('smoking_status').value || null,
+                        alcohol_consumption: document.getElementById('alcohol_consumption').value || null,
+                        exercise_frequency: document.getElementById('exercise_frequency').value || null,
+                        
+                        // Emergency contact
+                        emergency_contact: {
+                            name: document.getElementById('emergency_name').value || null,
+                            phone: document.getElementById('emergency_phone').value || null,
+                            relationship: document.getElementById('emergency_relationship').value || null
+                        },
+                        
+                        // Additional information
+                        family_history: document.getElementById('family_history').value || null,
+                        health_goals: document.getElementById('health_goals').value || null,
+                        additional_notes: document.getElementById('additional_notes').value || null,
+                        
+                        // Metadata
+                        last_updated: new Date().toISOString()
+                    }
+                };
+
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/v1/auth/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                if (response.ok) {
+                    showMessage('Health profile saved successfully! 🎉', 'success');
+                    
+                    // Update local storage
+                    const updatedUser = await response.json();
+                    localStorage.setItem('user_data', JSON.stringify(updatedUser));
+                    
+                    setTimeout(() => {
+                        window.location.href = '/live2d/';
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    showMessage('Error saving profile: ' + (error.detail || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showMessage('Error saving profile. Please try again.', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const messageEl = document.createElement('div');
+            messageEl.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                max-width: 400px;
+                font-size: 14px;
+            `;
+            messageEl.textContent = message;
+            document.body.appendChild(messageEl);
+            
+            setTimeout(() => messageEl.remove(), 5000);
+        }
+
+        // Toggle more conditions
+        function toggleMoreConditions() {
+            const moreConditions = document.getElementById('more-conditions');
+            const btnText = document.getElementById('more-btn-text');
+            
+            if (moreConditions.style.display === 'none') {
+                moreConditions.style.display = 'block';
+                btnText.textContent = '- Show Less';
+            } else {
+                moreConditions.style.display = 'none';
+                btnText.textContent = '+ Show More';
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/live2d/auth';
+        }
+    </script>
+</body>
+</html>

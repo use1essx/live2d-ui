@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareSphere Assistant - Live2D Voice Chat</title>
+    <style>
+        :root {
+            --bg: #eef4ff;
+            --bg-accent: #f7fbff;
+            --primary: #1d8fe3;
+            --primary-dark: #1473c9;
+            --accent: #42c6a2;
+            --danger: #ef5f68;
+            --text: #102b44;
+            --muted: #5a6c80;
+            --surface: rgba(255, 255, 255, 0.94);
+            --surface-strong: rgba(255, 255, 255, 0.98);
+            --border: rgba(17, 98, 152, 0.18);
+            --shadow-soft: 0 24px 60px rgba(14, 63, 104, 0.18);
+            --shadow-pop: 0 28px 48px rgba(17, 90, 150, 0.22);
+            --radius-xl: 26px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background:
+                radial-gradient(circle at 12% 16%, rgba(29, 143, 227, 0.12), transparent 52%),
+                radial-gradient(circle at 88% 20%, rgba(66, 198, 162, 0.12), transparent 48%),
+                linear-gradient(180deg, var(--bg) 0%, var(--bg-accent) 100%);
+            color: var(--text);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 28% 74%, rgba(29, 143, 227, 0.08), transparent 58%),
+                radial-gradient(circle at 82% 82%, rgba(108, 118, 234, 0.12), transparent 60%);
+            z-index: -1;
+        }
+
+        /* Live2D Background Container */
+        #live2d-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        #live2d-stage-root {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            max-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+
+        #live2d-stage-root canvas {
+            cursor: pointer;
+        }
+
+        .live2d-canvas-frame {
+            position: relative;
+            width: min(800px, 88vw);
+            aspect-ratio: 361 / 500;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: 0 32px 54px rgba(15, 61, 87, 0.24);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(29, 143, 227, 0.28);
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+        }
+
+        .live2d-canvas-frame canvas {
+            width: 100% !important;
+            height: 100% !important;
+            pointer-events: auto;
+        }
+
+        /* Header - Semi-transparent */
+        .chat-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(238, 247, 255, 0.9));
+            backdrop-filter: blur(20px);
+            padding: 18px 24px;
+            z-index: 10;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(29, 143, 227, 0.22), rgba(66, 198, 162, 0.2));
+            display: grid;
+            place-items: center;
+            font-size: 26px;
+            box-shadow: 0 18px 40px rgba(29, 143, 227, 0.18);
+        }
+
+        .header-title h1 {
+            font-size: 1.4rem;
+            background: linear-gradient(120deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+        }
+
+        .header-title .subtitle {
+            font-size: 0.82rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: rgba(29, 143, 227, 0.12);
+            border: 1px solid rgba(29, 143, 227, 0.22);
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.82rem;
+        }
+
+        .status-dot {
+            font-size: 12px;
+            animation: pulse 2.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .auth-button {
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 16px 32px rgba(29, 143, 227, 0.15);
+        }
+
+        .login-btn {
+            background: var(--surface-strong);
+            color: var(--primary);
+            border: 1px solid rgba(29, 143, 227, 0.24);
+        }
+
+        .login-btn:hover {
+            border-color: rgba(29, 143, 227, 0.38);
+            transform: translateY(-1px);
+        }
+
+        .register-btn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .register-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 32px rgba(29, 143, 227, 0.24);
+        }
+
+        .profile-btn, .admin-btn, .logout-btn {
+            background: var(--surface-strong);
+            color: var(--primary);
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(29, 143, 227, 0.24);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 16px 32px rgba(29, 143, 227, 0.15);
+        }
+
+        .profile-btn:hover, .admin-btn:hover, .logout-btn:hover {
+            border-color: rgba(29, 143, 227, 0.38);
+            transform: translateY(-1px);
+        }
+
+        .admin-btn {
+            background: linear-gradient(135deg, rgba(239, 95, 104, 0.12), rgba(239, 95, 104, 0.08));
+            color: var(--danger);
+            border-color: rgba(239, 95, 104, 0.24);
+        }
+
+        .admin-btn:hover {
+            background: linear-gradient(135deg, rgba(239, 95, 104, 0.18), rgba(239, 95, 104, 0.12));
+            border-color: rgba(239, 95, 104, 0.38);
+        }
+
+        .user-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--surface-strong);
+            border: 1px solid rgba(16, 46, 70, 0.12);
+            box-shadow: 0 18px 36px rgba(15, 61, 87, 0.14);
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Profile Modal */
+        .profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #6b7280;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: #4f46e5;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .profile-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(79, 70, 229, 0.05);
+            border-radius: 12px;
+        }
+
+        .profile-section h3 {
+            color: #4f46e5;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .profile-section p {
+            margin: 5px 0;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Chat Messages Overlay - Fully transparent container, visible messages */
+        .chat-messages-container {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 140px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 40vh;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+
+        .chat-messages {
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            padding: 15px;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            /* Remove justify-content: flex-end to enable proper scrolling */
+            min-height: 100px;
+            /* No background - completely transparent container */
+            background: transparent;
+            border: none;
+            cursor: default;
+            scroll-behavior: smooth;
+        }
+
+        .chat-messages:hover {
+            /* Ensure scrolling works when hovering */
+            pointer-events: auto;
+        }
+
+        /* Spacer to push messages to bottom when there aren't many */
+        .chat-messages::before {
+            content: '';
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        /* Custom scrollbar - 0% visible by default, 100% on hover */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 4px;
+            transition: background 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+        }
+
+        .chat-messages:hover::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.5);
+            opacity: 1;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.7);
+            opacity: 1;
+        }
+
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+            gap: 10px;
+            animation: slideUp 0.4s ease-out;
+            flex-shrink: 0;
+            flex-grow: 0;
+            /* Messages always visible */
+            opacity: 1;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .message.user .message-content {
+            background: rgba(103, 126, 234, 0.9);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.ai .message-content {
+            background: rgba(255, 255, 255, 0.9);
+            color: #1f2937;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-meta {
+            font-size: 10px;
+            opacity: 0.7;
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .agent-badge {
+            background: rgba(79, 70, 229, 0.15);
+            color: #4f46e5;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 500;
+        }
+
+        /* Input Area - Bottom with transparency */
+        .chat-input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(79, 70, 229, 0.2);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chat-input {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 15px 20px;
+        }
+
+        .input-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-button {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(29, 143, 227, 0.22);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            transition: all 0.2s;
+            background: rgba(29, 143, 227, 0.12);
+            color: var(--primary);
+            box-shadow: 0 16px 28px rgba(29, 143, 227, 0.18);
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            background: rgba(29, 143, 227, 0.18);
+            border-color: rgba(29, 143, 227, 0.32);
+        }
+
+        .control-button.active {
+            background: rgba(66, 198, 162, 0.2);
+            color: var(--accent);
+            box-shadow: 0 20px 34px rgba(66, 198, 162, 0.24);
+            animation: pulseButton 1.5s infinite;
+        }
+
+        @keyframes pulseButton {
+            0%, 100% {
+                box-shadow: 0 20px 34px rgba(66, 198, 162, 0.24);
+            }
+            50% {
+                box-shadow: 0 20px 34px rgba(66, 198, 162, 0.40);
+            }
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-field {
+            flex: 1;
+            min-height: 58px;
+            max-height: 120px;
+            padding: 14px 16px;
+            border: 1px solid rgba(29, 143, 227, 0.22);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            resize: none;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.96);
+            color: var(--text);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: rgba(29, 143, 227, 0.45);
+            box-shadow: 0 0 0 3px rgba(29, 143, 227, 0.18);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .send-button {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--radius-md);
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 18px;
+            box-shadow: 0 18px 32px rgba(29, 143, 227, 0.24);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(29, 143, 227, 0.30);
+        }
+
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+            margin-bottom: 12px;
+            margin-left: 50px;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 70%;
+            animation: slideUp 0.4s ease-out;
+            align-self: flex-start;
+            flex-shrink: 0;
+            order: 9999;
+        }
+
+        .typing-indicator.show {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+
+        /* Welcome overlay */
+        .welcome-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 8;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(238, 247, 255, 0.9));
+            backdrop-filter: blur(20px);
+            padding: 40px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-pop);
+            border: 1px solid var(--border);
+            text-align: center;
+            max-width: 450px;
+            animation: welcomeSlideIn 0.5s ease-out;
+        }
+
+        @keyframes welcomeSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -45%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .welcome-overlay h2 {
+            font-size: 1.5rem;
+            background: linear-gradient(120deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .welcome-overlay p {
+            color: var(--muted);
+            margin-bottom: 24px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .chat-header {
+                padding: 10px 15px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-title h1 {
+                font-size: 16px;
+            }
+
+            .header-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .auth-button, .profile-btn, .logout-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .user-info {
+                font-size: 11px;
+            }
+
+            .chat-messages-container {
+                max-height: 35vh;
+                width: 95%;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            #live2d-stage-root {
+                max-width: 550px;
+            }
+        }
+    </style>
+    <script src="/live2d/Core/live2dcubismcore.js"></script>
+    <script src="/live2d/assets/index-DAhHvHok.js"></script>
+</head>
+<body>
+    <!-- Live2D Background Layer -->
+    <div id="live2d-container">
+        <div id="live2d-stage-root">
+            <div id="live2dContainer" class="live2d-canvas-frame"></div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="brand-icon">🏥</div>
+                <div>
+                    <h1>CareSphere Assistant</h1>
+                    <div class="subtitle">Live2D Healthcare Concierge</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Connecting...</span>
+                </div>
+                <!-- Auth buttons (shown when not logged in) -->
+                <div id="guestActions" style="display: none;">
+                    <button class="auth-button login-btn" onclick="window.location.href='/live2d/auth'">
+                        🔐 Login
+                    </button>
+                    <button class="auth-button register-btn" onclick="window.location.href='/live2d/auth?register=true'">
+                        ✨ Register
+                    </button>
+                        </div>
+                <!-- User actions (shown when logged in) -->
+                <div id="userActions" style="display: none;">
+                    <div class="user-info" id="userInfo">
+                        <span>👤</span>
+                        <span id="userName">User</span>
+                    </div>
+                    <button class="profile-btn" id="profileBtn">
+                        📊 Profile
+                    </button>
+                    <button class="admin-btn" id="adminBtn" style="display: none;">
+                        🛠️ Admin
+                    </button>
+                    <button class="logout-btn" id="logoutBtn">
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Welcome Overlay -->
+    <div class="welcome-overlay" id="welcomeOverlay">
+        <h2>💛 Start a health check-in</h2>
+        <p>Speak or type to begin — your Live2D nurse is ready.</p>
+        <small style="color: #9ca3af;">Powered by Live2D Cubism SDK & AI</small>
+            </div>
+
+    <!-- Chat Messages Overlay -->
+    <div class="chat-messages-container">
+        <div class="chat-messages" id="chatMessages">
+            <!-- Typing indicator will be dynamically added here -->
+        </div>
+        </div>
+
+    <!-- Typing Indicator Template (hidden) -->
+    <div class="typing-indicator" id="typingIndicator">
+        <div class="typing-dots">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input-container">
+        <div class="chat-input">
+            <div class="input-controls">
+                <button class="control-button" id="voiceButton" title="Voice Input">
+                    🎤
+                </button>
+                <button class="control-button" id="stopTTSButton" title="Stop Speaking">
+                    🔇
+                </button>
+                <button class="control-button" id="deleteButton" title="Clear Chat">
+                    🗑️
+                </button>
+            </div>
+            <div class="input-container">
+                <textarea 
+                    id="messageInput" 
+                    class="input-field" 
+                    placeholder="Type a message..."
+                    rows="1"
+                ></textarea>
+                <button id="sendButton" class="send-button">📤</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const LIVE2D_TEST_MODEL = 'Hiyori';
+
+        // Force override BEFORE scripts load
+        window.ye = [LIVE2D_TEST_MODEL];
+        window.Wi = '/live2d/Resources/';
+        
+        console.log('🎭 Pre-set model list:', window.ye);
+        console.log('🗂️ Pre-set resource path:', window.Wi);
+
+        function configureLive2DGlobals(attempts = 12) {
+            // Keep forcing the values
+            if (Array.isArray(window.ye) && window.ye[0] !== LIVE2D_TEST_MODEL) {
+                window.ye = [LIVE2D_TEST_MODEL];
+                console.log('🔄 Re-enforced model list:', window.ye);
+            }
+
+            if (typeof window.Wi !== 'undefined' && window.Wi !== '/live2d/Resources/') {
+                window.Wi = '/live2d/Resources/';
+                console.log('🔄 Re-enforced resource path:', window.Wi);
+            }
+
+            if (attempts > 0) {
+                setTimeout(() => configureLive2DGlobals(attempts - 1), 200);
+            }
+        }
+
+        function moveLive2DCanvasToFrame() {
+            const canvas = document.querySelector('canvas');
+            const frame = document.getElementById('live2dContainer');
+
+            if (canvas && frame && !frame.contains(canvas)) {
+                frame.innerHTML = '';
+                frame.appendChild(canvas);
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.pointerEvents = 'auto';
+                console.log('✅ Live2D canvas moved into test frame');
+                return true;
+            }
+            return false;
+        }
+
+        function waitForCubism(maxMs = 6000) {
+            return new Promise((resolve, reject) => {
+                const started = performance.now();
+                const tick = () => {
+                    if (window.LAppDelegate && typeof window.LAppDelegate.getInstance === 'function') {
+                        resolve(window.LAppDelegate.getInstance());
+                    } else if (performance.now() - started > maxMs) {
+                        reject(new Error('Live2D Cubism not found'));
+        } else {
+                        requestAnimationFrame(tick);
+                    }
+                };
+                tick();
+            });
+        }
+
+        function bootstrapLive2DCanvas() {
+            configureLive2DGlobals();
+            const ensureCanvas = () => moveLive2DCanvasToFrame();
+
+            waitForCubism()
+                .then((app) => {
+                    if (!window.__live2dStarted && app && typeof app.run === 'function') {
+                        window.__live2dStarted = true;
+                        console.log('🚀 Starting Live2D app inside test harness');
+                        app.run();
+                    }
+                    setTimeout(ensureCanvas, 250);
+                    setTimeout(ensureCanvas, 1000);
+                    setTimeout(ensureCanvas, 2500);
+                })
+                .catch((error) => {
+                    console.error('❌ Live2D initialisation error:', error);
+                });
+
+            const observer = new MutationObserver(ensureCanvas);
+            observer.observe(document.body, { childList: true, subtree: true });
+            window.__live2dTestObserver = observer;
+        }
+    </script>
+    
+    <script>
+        class Live2DChatInterface {
+            constructor() {
+                this.baseUrl = 'http://localhost:8000';
+                this.sessionId = this.generateSessionId();
+                this.userId = `web_user_${Date.now()}`;
+                this.userProfile = null;
+                this.chatHistory = [];
+                
+                this.chatMessages = document.getElementById('chatMessages');
+                this.chatMessagesContainer = document.querySelector('.chat-messages-container');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.voiceButton = document.getElementById('voiceButton');
+                this.stopTTSButton = document.getElementById('stopTTSButton');
+                this.deleteButton = document.getElementById('deleteButton');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                this.statusDot = document.getElementById('statusDot');
+                this.statusText = document.getElementById('statusText');
+                this.isSpeaking = false;
+                
+                // Initialize stop TTS button as inactive
+                this.stopTTSButton.style.opacity = '0.3';
+                this.welcomeOverlay = document.getElementById('welcomeOverlay');
+                this.guestActions = document.getElementById('guestActions');
+                this.userActions = document.getElementById('userActions');
+                this.userName = document.getElementById('userName');
+                this.profileBtn = document.getElementById('profileBtn');
+                this.adminBtn = document.getElementById('adminBtn');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                
+                this.isRecording = false;
+                this.mediaRecorder = null;
+                this.messageCount = 0;
+                
+                this.init();
+            }
+
+            generateSessionId() {
+                return 'web_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            async init() {
+                await this.checkAuthStatus();
+                this.setupEventListeners();
+                this.checkServerStatus();
+                
+                // Auto-resize textarea
+                this.messageInput.addEventListener('input', (e) => {
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                });
+
+                // Hide welcome overlay after 4 seconds or on first interaction
+                setTimeout(() => this.hideWelcome(), 4000);
+                
+                // Load user data if authenticated
+                if (this.isAuthenticated()) {
+                    await this.loadUserProfile();
+                }
+                
+                this.updateAuthUI();
+            }
+            
+            isAuthenticated() {
+                const token = localStorage.getItem('access_token');
+                return !!token;
+            }
+
+            async checkAuthStatus() {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    return false;
+                }
+
+                try {
+                    const response = await fetch('/api/v1/auth/me', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (response.ok) {
+                        this.userProfile = await response.json();
+                return true;
+                    } else {
+                        // Invalid token, clear it
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                return false;
+            }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    return false;
+                }
+            }
+
+            async loadUserProfile() {
+                if (!this.isAuthenticated()) return;
+
+                try {
+                    const token = localStorage.getItem('access_token');
+                    const response = await fetch('/api/v1/auth/profile', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        this.userProfile = profileData;
+                    }
+                } catch (error) {
+                    console.error('Failed to load user profile:', error);
+                }
+            }
+
+            updateAuthUI() {
+                if (this.isAuthenticated() && this.userProfile) {
+                    // Show user actions, hide guest actions
+                    this.guestActions.style.display = 'none';
+                    this.userActions.style.display = 'flex';
+                    this.userName.textContent = this.userProfile.full_name || this.userProfile.username || 'User';
+                    
+                    // Show/hide buttons based on user role
+                    const role = (this.userProfile.role || '').toLowerCase();
+                    const isAdmin = role === 'admin' || role === 'super_admin';
+                    const isHealthcareStaff = ['doctor', 'nurse', 'counselor', 'social_worker'].includes(role);
+                    
+                    if (isAdmin || isHealthcareStaff) {
+                        // Admins and Healthcare staff: Show Admin button, hide Profile button
+                        this.adminBtn.style.display = 'inline-block';
+                        this.profileBtn.style.display = 'none';
+                    } else {
+                        // Patients and other users: Show Profile button, hide Admin button
+                        this.adminBtn.style.display = 'none';
+                        this.profileBtn.style.display = 'inline-block';
+                    }
+                    } else {
+                    // Show guest actions, hide user actions
+                    this.guestActions.style.display = 'flex';
+                    this.userActions.style.display = 'none';
+                }
+            }
+
+            goToAdmin() {
+                const adminPath = '/admin/';
+
+                if (!this.userProfile || !this.isAuthenticated()) {
+                    window.location.href = `/live2d/auth?next=${encodeURIComponent('/admin/')}`;
+                    return;
+                }
+                
+                const role = (this.userProfile.role || '').toLowerCase();
+                const isAdmin = role === 'admin' || role === 'super_admin';
+                const isHealthcareStaff = ['doctor', 'nurse', 'counselor', 'social_worker'].includes(role);
+                
+                // Allow admins and healthcare staff to access admin pages
+                if (!isAdmin && !isHealthcareStaff) {
+                    alert('You do not have permission to access the admin dashboard.');
+                    return;
+                }
+                
+                const target = adminPath;
+                window.location.href = target;
+            }
+
+            hideWelcome() {
+                if (this.welcomeOverlay) {
+                    this.welcomeOverlay.style.opacity = '0';
+                    this.welcomeOverlay.style.transition = 'opacity 0.5s';
+                        setTimeout(() => {
+                        this.welcomeOverlay.style.display = 'none';
+                        }, 500);
+                }
+            }
+
+            setupEventListeners() {
+                this.sendButton.addEventListener('click', () => {
+                    this.sendMessage();
+                    this.hideWelcome();
+                });
+                
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                        this.hideWelcome();
+                    }
+                });
+
+                this.voiceButton.addEventListener('click', () => this.toggleVoiceRecording());
+                this.stopTTSButton.addEventListener('click', () => this.stopSpeaking());
+                this.deleteButton.addEventListener('click', () => this.clearChat());
+                
+                // Auth event listeners
+                this.profileBtn.addEventListener('click', () => this.showProfile());
+                this.adminBtn.addEventListener('click', () => this.goToAdmin());
+                this.logoutBtn.addEventListener('click', () => this.logout());
+            }
+
+            async checkServerStatus() {
+                try {
+                    const response = await fetch(`${this.baseUrl}/health`);
+                    if (response.ok) {
+                        this.setStatus(true, 'Connected');
+                } else {
+                        this.setStatus(false, 'Server Error');
+                    }
+                } catch (error) {
+                    this.setStatus(false, 'Disconnected');
+                    console.error('Cannot connect to server:', error);
+                }
+            }
+
+            setStatus(connected, text) {
+                this.statusDot.className = `status-dot ${connected ? 'connected' : ''}`;
+                this.statusText.textContent = text;
+            }
+
+            animateLive2D(type) {
+                // Live2D animations are handled by the stage
+                console.log('Live2D animation triggered:', type);
+                
+                // Show/hide stop TTS button based on speaking state
+                if (type === 'speaking') {
+                    this.isSpeaking = true;
+                    this.stopTTSButton.style.display = 'inline-block';
+                    this.stopTTSButton.style.opacity = '1';
+                } else if (type === 'idle') {
+                    this.isSpeaking = false;
+                    this.stopTTSButton.style.display = 'inline-block';
+                    this.stopTTSButton.style.opacity = '0.3';
+                }
+            }
+
+            stopSpeaking() {
+                console.log('🔇 Stopping speech...');
+                
+                // Stop speech synthesis if available
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                
+                // Return Live2D to idle
+                this.isSpeaking = false;
+                this.stopTTSButton.style.opacity = '0.3';
+                this.animateLive2D('idle');
+            }
+
+            async toggleVoiceRecording() {
+                if (!this.isRecording) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.mediaRecorder = new MediaRecorder(stream);
+                        const audioChunks = [];
+
+                        this.mediaRecorder.ondataavailable = (event) => {
+                            audioChunks.push(event.data);
+                        };
+
+                        this.mediaRecorder.onstop = async () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            await this.sendVoiceMessage(audioBlob);
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+
+                        this.mediaRecorder.start();
+                        this.isRecording = true;
+                        this.voiceButton.classList.add('active');
+                        this.animateLive2D('listening');
+                    } catch (error) {
+                        console.error('Error accessing microphone:', error);
+                        alert('Cannot access microphone. Please check permissions.');
+                    }
+                } else {
+                    this.mediaRecorder.stop();
+                    this.isRecording = false;
+                    this.voiceButton.classList.remove('active');
+                }
+            }
+
+            async sendVoiceMessage(audioBlob) {
+                // Placeholder: In production, send to speech-to-text API
+                console.log('Voice message recorded:', audioBlob);
+                this.addMessage('user', '[Voice message - transcription pending]');
+                alert('Voice processing feature coming soon!');
+            }
+
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+
+                this.messageInput.value = '';
+                this.messageInput.style.height = 'auto';
+                this.sendButton.disabled = true;
+
+                this.addMessage('user', message);
+                this.showTyping();
+                this.animateLive2D('thinking');
+
+                try {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    // Add auth token if available
+                    const token = localStorage.getItem('access_token');
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
+
+                    const response = await fetch(`${this.baseUrl}/api/v1/agents/chat`, {
+                    method: 'POST',
+                        headers: headers,
+                    body: JSON.stringify({
+                        message: message,
+                            session_id: this.sessionId,
+                            user_id: this.userId,
+                            language_preference: 'auto'
+                    })
+                });
+
+                    this.hideTyping();
+
+                    if (response.ok) {
+                const data = await response.json();
+                        console.log('📥 API Response:', data);
+                        this.addAIMessage(data);
+                        this.animateLive2D('speaking');
+                } else {
+                        const errorText = await response.text();
+                        console.error('❌ API Error:', errorText);
+                        this.addMessage('ai', `⚠️ Error: ${errorText}`);
+                }
+            } catch (error) {
+                    this.hideTyping();
+                    this.addMessage('ai', `⚠️ Connection error: ${error.message}`);
+                } finally {
+                    this.sendButton.disabled = false;
+                    this.messageInput.focus();
+                }
+            }
+
+            addMessage(type, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = type === 'user' ? '👤' : '🩺';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = content;
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-meta';
+                metaDiv.innerHTML = `<span>${new Date().toLocaleTimeString()}</span>`;
+
+                contentDiv.appendChild(metaDiv);
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+
+                this.chatMessages.appendChild(messageDiv);
+                this.messageCount++;
+                this.updateContainerVisibility();
+                this.scrollToBottom();
+            }
+
+            addAIMessage(data) {
+                console.log('💬 Processing AI message:', data);
+            
+            const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ai';
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = '🩺';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+                const responseText = document.createElement('div');
+                // Try multiple possible response field names (message is the primary field)
+                const responseContent = data.message || 
+                                       data.response || 
+                                       data.content || 
+                                       data.text ||
+                                       data.ai_response ||
+                                       (data.data && data.data.message) ||
+                                       (data.data && data.data.response) ||
+                                       'No response received';
+                
+                responseText.textContent = responseContent;
+                contentDiv.appendChild(responseText);
+
+                const metaDiv = document.createElement('div');
+                metaDiv.className = 'message-meta';
+                
+                const agentName = this.getAgentName(data.agent_type);
+                const confidence = data.confidence ? `${Math.round(data.confidence * 100)}%` : '';
+                
+                metaDiv.innerHTML = `
+                    <div>
+                        <span class="agent-badge">${agentName}</span>
+                        ${confidence ? `<span style="margin-left: 8px; font-size: 9px;">✓ ${confidence}</span>` : ''}
+                        </div>
+                    <span>${new Date().toLocaleTimeString()}</span>
+                `;
+
+                contentDiv.appendChild(metaDiv);
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(contentDiv);
+
+                this.chatMessages.appendChild(messageDiv);
+                this.messageCount++;
+                this.updateContainerVisibility();
+                this.scrollToBottom();
+            }
+
+            getAgentName(agentType) {
+                const names = {
+                    'illness_monitor': '慧心助手',
+                    'mental_health': '小星星',
+                    'safety_guardian': 'Safety Guardian',
+                    'wellness_coach': 'Wellness Coach'
+                };
+                return names[agentType] || 'AI Nurse';
+            }
+
+            showTyping() {
+                // Add typing indicator to the chat messages if not already there
+                if (!this.chatMessages.contains(this.typingIndicator)) {
+                    this.chatMessages.appendChild(this.typingIndicator);
+                }
+                this.typingIndicator.classList.add('show');
+                this.typingIndicator.style.display = 'flex';
+                // Force scroll after a tiny delay to ensure DOM is updated
+                setTimeout(() => this.scrollToBottom(), 50);
+            }
+
+            hideTyping() {
+                this.typingIndicator.classList.remove('show');
+                this.typingIndicator.style.display = 'none';
+                // Remove from DOM when hiding
+                if (this.chatMessages.contains(this.typingIndicator)) {
+                    this.chatMessages.removeChild(this.typingIndicator);
+                }
+            }
+
+            updateContainerVisibility() {
+                // Container is always transparent, messages are always visible
+                // Just track that we have messages for other purposes
+                if (this.messageCount > 0) {
+                    this.chatMessagesContainer.classList.add('has-messages');
+            } else {
+                    this.chatMessagesContainer.classList.remove('has-messages');
+                }
+            }
+
+            clearChat() {
+                if (confirm('Clear all messages?')) {
+                    this.chatMessages.innerHTML = '';
+                    this.sessionId = this.generateSessionId();
+                    this.messageCount = 0;
+                    this.updateContainerVisibility();
+                    this.hideTyping();
+                }
+            }
+
+            scrollToBottom() {
+                // Smooth scroll to bottom with animation
+                this.chatMessages.scrollTo({
+                    top: this.chatMessages.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+
+            async logout() {
+                try {
+                    const token = localStorage.getItem('access_token');
+                    if (token) {
+                        await fetch('/api/v1/auth/logout', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                } finally {
+                    // Clear local storage
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('user_data');
+                    document.cookie = 'access_token=; path=/; Max-Age=0; SameSite=Lax';
+                    this.userProfile = null;
+                    
+                    // Update UI
+                    this.updateAuthUI();
+                    
+                    // Clear chat
+                    this.chatMessages.innerHTML = '';
+                    this.messageCount = 0;
+                    
+                    // Show welcome message again
+                    if (this.welcomeOverlay) {
+                        this.welcomeOverlay.style.display = 'block';
+                        this.welcomeOverlay.style.opacity = '1';
+                    }
+                }
+            }
+
+            async showProfile() {
+                if (!this.isAuthenticated()) {
+                    // Show a friendly modal for guests instead of alert
+                    this.showGuestProfileModal();
+                    return;
+                }
+
+                // Redirect to the comprehensive health profile page
+                window.location.href = '/live2d/profile';
+            }
+
+            showGuestProfileModal() {
+                const modal = document.createElement('div');
+                modal.className = 'profile-modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>🏥 Health Profile Access</h2>
+                            <button class="close-btn" onclick="this.closest('.profile-modal').remove()">×</button>
+                        </div>
+                        <div class="modal-body" style="text-align: center; padding: 40px 20px;">
+                            <div style="font-size: 64px; margin-bottom: 20px;">🔒</div>
+                            <h3 style="margin-bottom: 16px; color: var(--text);">Login Required</h3>
+                            <p style="color: var(--muted); margin-bottom: 16px; line-height: 1.6;">
+                                Create an account or login to access your comprehensive health profile where you can:
+                            </p>
+                            <div style="text-align: left; max-width: 400px; margin: 0 auto 24px; color: var(--text);">
+                                <p style="margin: 8px 0;">✅ <strong>Edit personal information</strong> (age, gender, height, weight)</p>
+                                <p style="margin: 8px 0;">🩺 <strong>Manage medical history</strong> (blood type, chronic conditions)</p>
+                                <p style="margin: 8px 0;">💊 <strong>Track medications</strong> and drug allergies</p>
+                                <p style="margin: 8px 0;">💬 <strong>Get personalized healthcare</strong> recommendations</p>
+                            </div>
+                            <div style="display: flex; gap: 12px; justify-content: center;">
+                                <button class="auth-button register-btn" onclick="window.location.href='/live2d/auth?register=true'">
+                                    ✨ Create Account
+                                </button>
+                                <button class="auth-button login-btn" onclick="window.location.href='/live2d/auth'">
+                                    🔐 Login
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+
+            displayProfileModal(profileData) {
+                const modal = document.createElement('div');
+                modal.className = 'profile-modal';
+                
+                // Format date
+                const createdDate = profileData.created_at ? new Date(profileData.created_at).toLocaleDateString() : 'N/A';
+                const isActive = profileData.is_active ? '✅ Active' : '❌ Inactive';
+                
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>👤 User Profile</h2>
+                            <button class="close-btn" onclick="this.closest('.profile-modal').remove()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="profile-section">
+                                <h3>👤 Personal Information</h3>
+                                <p><strong>Username:</strong> ${profileData.username || 'N/A'}</p>
+                                <p><strong>Email:</strong> ${profileData.email || 'N/A'}</p>
+                                <p><strong>Full Name:</strong> ${profileData.full_name || 'Not set'}</p>
+                                <p><strong>Status:</strong> ${isActive}</p>
+                            </div>
+                            
+                            <div class="profile-section">
+                                <h3>🔐 Account Details</h3>
+                                <p><strong>Account Created:</strong> ${createdDate}</p>
+                                <p><strong>Role:</strong> ${profileData.role || 'User'}</p>
+                                <p><strong>Email Verified:</strong> ${profileData.is_verified ? '✅ Yes' : '❌ No'}</p>
+                            </div>
+                            
+                            <div class="profile-section" style="text-align: center; padding: 20px;">
+                                <p style="color: var(--muted); font-size: 0.9rem;">
+                                    💙 Thank you for using CareSphere!<br>
+                                    Your health companion powered by AI
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                // Close on background click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.remove();
+                    }
+                });
+            }
+        }
+
+        // Initialize when page loads
+            document.addEventListener('DOMContentLoaded', () => {
+            bootstrapLive2DCanvas();
+            new Live2DChatInterface();
+            });
+    </script>
+</body>
+</html>
