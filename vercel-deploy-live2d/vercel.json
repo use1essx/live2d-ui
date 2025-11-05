@@ -1,16 +1,8 @@
 {
-  "version": 2,
-  "public": true,
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/live2d/(.*)",
-      "destination": "/$1"
-    }
-  ],
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -28,6 +20,19 @@
           "value": "X-Requested-With, Content-Type, Authorization"
         }
       ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/live2d/(.*)",
+      "dest": "/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
