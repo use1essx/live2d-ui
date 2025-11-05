@@ -765,8 +765,8 @@
             }
         }
     </style>
-    <script src="/live2d/Core/live2dcubismcore.js"></script>
-    <script src="/live2d/assets/index-DAhHvHok.js"></script>
+    <script src="/Core/live2dcubismcore.js"></script>
+    <script src="/assets/index-DAhHvHok.js"></script>
 </head>
 <body>
     <!-- Live2D Background Layer -->
@@ -874,7 +874,7 @@
 
         // Force override BEFORE scripts load
         window.ye = [LIVE2D_TEST_MODEL];
-        window.Wi = '/live2d/Resources/';
+        window.Wi = '/Resources/';
         
         console.log('🎭 Pre-set model list:', window.ye);
         console.log('🗂️ Pre-set resource path:', window.Wi);
@@ -886,8 +886,8 @@
                 console.log('🔄 Re-enforced model list:', window.ye);
             }
 
-            if (typeof window.Wi !== 'undefined' && window.Wi !== '/live2d/Resources/') {
-                window.Wi = '/live2d/Resources/';
+            if (typeof window.Wi !== 'undefined' && window.Wi !== '/Resources/') {
+                window.Wi = '/Resources/';
                 console.log('🔄 Re-enforced resource path:', window.Wi);
             }
 
